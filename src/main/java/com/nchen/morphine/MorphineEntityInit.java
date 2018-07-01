@@ -4,67 +4,140 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 public class MorphineEntityInit {
-    private final static String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS ";
+    private final static String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
+    private final static String AUTO_INCREMENT = "AUTO_INCREMENT";
+    private final static String NOT_NULL = "NOT NULL";
+    private final static String PRIMARY_KEY = "PRIMARY KEY";
+    private final static String UNIQUE = "UNIQUE";
+
+    private static class TableBuilder {
+        String name;
+        ColumnBuilder[] columns;
+
+        static TableBuilder build(Class entity) {
+            TableBuilder builder = new TableBuilder();
+            builder.name = getTableName(entity);
+            builder.columns = getColumns(entity);
+            return builder;
+        }
+
+        void create() {
+            String sql = createSql();
+            Morphine.getMorphine().execute(sql);
+        }
+
+        String createSql() {
+            String comm = CREATE_TABLE + " ";
+            comm = comm + name + " ";
+            comm = comm + "(";
+
+            StringBuilder cols = new StringBuilder();
+            for(ColumnBuilder col : columns) {
+                cols.append(col.getQuery()).append(", ");
+            }
+
+            cols = new StringBuilder(cols.substring(0, cols.length() - 2));
+
+            comm = comm + cols;
+            String primaryKey = getPrimaryKeyColumn();
+
+            if(primaryKey.length() > 0) {
+                comm = comm + ", " + PRIMARY_KEY + "("+ primaryKey + ")";
+            }
+            comm = comm + ")";
+
+            return comm;
+        }
+
+        private String getPrimaryKeyColumn() {
+            for(TableBuilder.ColumnBuilder col : columns) {
+                if(col.isPrimaryKey) {
+                    return col.name;
+                }
+            }
+            return "";
+        }
+
+        private static class ColumnBuilder {
+            String name;
+            String type;
+            String constraints = "";
+            boolean isPrimaryKey;
+
+            String getQuery() {
+                return name + " "
+                        + type + " "
+                        + constraints
+                        + (isPrimaryKey ? NOT_NULL + " " + AUTO_INCREMENT : "");
+            }
+        }
+    }
+
 
     public static void createTables(List<Class> entities) {
         for (Class entity : entities) {
-            String createTableStatement =
-                    CREATE_TABLE
-                    + getTableName(entity) + " "
-                    + getColumns(entity);
+            TableBuilder tableBuilder = TableBuilder.build(entity);
+            tableBuilder.create();
         }
     }
 
     private static String getTableName(Class entity) {
-        String table = null;
+        String table;
 
         if(entity.isAnnotationPresent(Table.class)) {
             table = ((Table)entity.getAnnotation(Table.class)).value();
         } else {
-            table = entity.getName();
+            table = entity.getSimpleName().toUpperCase();
         }
 
         return table.toUpperCase();
     }
 
-    private static String getColumns(Class entity) {
-        String cols = "";
-        String primaryKey;
-
+    private static TableBuilder.ColumnBuilder[] getColumns(Class entity) {
         Field fields[] = entity.getDeclaredFields();
+        TableBuilder.ColumnBuilder[] columns = new TableBuilder.ColumnBuilder[fields.length];
 
-        for(Field field : fields) {
-            String column = null;
-
-            column = getColumnDefinition(field);
-
-            if(field.isAnnotationPresent(Id.class)) {
-            }
-
+        for(int i = 0; i < fields.length; i++) {
+            columns[i] = getColumnDefinition(fields[i]);
         }
 
-        return "(" + cols + ")";
+        return columns;
     }
 
-    private static String getColumnDefinition(Field field) {
-        String name;
-        String res = null;
-        String notNull = "";
-
-        name = field.getName();
+    private static TableBuilder.ColumnBuilder getColumnDefinition(Field field) {
+        TableBuilder.ColumnBuilder columnBuilder = new TableBuilder.ColumnBuilder();
+        columnBuilder.name = field.getName().toUpperCase();
+        columnBuilder.type = getColumnType(field.getType().getSimpleName());
 
         if(field.isAnnotationPresent(Column.class)) {
             Column column = field.getAnnotation(Column.class);
-            name = column.name();
-
-            if(!column.nullable()) {
-                notNull = "NOT NULL ";
-            }
+            columnBuilder.name = column.name().length() == 0 ? columnBuilder.name : column.name();
+            columnBuilder.constraints = getColumnConstraints(column);
         }
 
+        if(field.isAnnotationPresent(Id.class)) {
+            columnBuilder.isPrimaryKey = true;
+        }
 
+        return columnBuilder;
+    }
 
-        return res;
+    private static String getColumnType(String type) {
+        return ColumnType.valueOf(type.toUpperCase()).getSqlType();
+    }
+
+    private static String getColumnConstraints(Column column) {
+        String constr = "";
+
+        if(!column.nullable()) {
+            constr = constr + NOT_NULL + " ";
+        }
+
+        if(column.unique()) {
+            constr = constr + UNIQUE + " ";
+        }
+
+        return constr.trim();
     }
 
     private static String getNameInQuotes(String name) {
@@ -73,18 +146,4 @@ public class MorphineEntityInit {
         }
         return "\'" + name + "\'";
     }
-
-    private static class TableBuilder {
-        private String name;
-        private ColumnBuilder[] columns;
-        private String primaryKey;
-
-        private static class ColumnBuilder {
-            private String name;
-            private String type;
-            private String constraints[];
-        }
-    }
-
-
 }

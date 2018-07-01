@@ -1,11 +1,13 @@
 import com.nchen.morphine.Morphine;
-import com.sun.org.apache.bcel.internal.generic.MONITORENTER;
 
 import java.io.IOException;
 
 public class Main {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         System.out.println("Started");
-        Morphine morphine = Morphine.create().build();
+        Morphine morphine = Morphine.create();
+        morphine.setScanPackage("com.nchen.morphine");
+        morphine.setDbUrl("localhost/test");
+        morphine.build();
     }
 }

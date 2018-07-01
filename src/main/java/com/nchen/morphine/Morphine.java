@@ -4,11 +4,18 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 public class Morphine {
     private static Morphine morphine = null;
     private Configuration configuration = null;
+    private String scanPackage;
+    private static final String JDBC = "jdbc:mysql://";
+
+    private Morphine() {
+        configuration = new Configuration();
+    }
 
     public static Morphine create() {
         if(morphine == null) {
@@ -17,16 +24,39 @@ public class Morphine {
         return morphine;
     }
 
-    public Morphine build() throws IOException {
-       // configuration.init();
-
-        List<Class> entities = MorphineEntityScanner.scanPackageForEntities("com.nchen.morphine");
-
+    public Morphine build() {
+        try {
+            configuration.init();
+            List<Class> entities = MorphineEntityScanner.scanPackageForEntities(scanPackage);
+            MorphineEntityInit.createTables(entities);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return this;
     }
 
-    private Morphine() {
-        configuration = new Configuration();
+    public void execute(String sql) {
+        Statement statement = null;
+        try {
+            statement = configuration.connection.createStatement();
+            statement.execute(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                statement.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static Morphine getMorphine() {
+        return morphine;
     }
 
     public Morphine setDbUrl(String url) {
@@ -35,46 +65,32 @@ public class Morphine {
     }
 
     public Morphine setDriverName(String driverName) {
-        Configuration.setDriverName(driverName);
+        configuration.setDriverName(driverName);
         return this;
     }
 
-    public static class Configuration {
-        private static String DRIVER_NAME = "com.mysql.jdbc.Driver";
-        private String url = null;
-        private Connection connection = null;
-        private String user = null;
-        private String password = null;
+    public void setScanPackage(String scanPackage) {
+        this.scanPackage = scanPackage;
+    }
 
-        void init() {
-            try {
-                Class.forName(Configuration.DRIVER_NAME);
-                connection = DriverManager.getConnection(url);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+    private class Configuration {
+        String DRIVER_NAME = "com.mysql.jdbc.Driver";
+        String url = null;
+        Connection connection = null;
+        String user = null;
+        String password = null;
+
+        void init() throws ClassNotFoundException, SQLException {
+           Class.forName(DRIVER_NAME);
+           connection = DriverManager.getConnection(JDBC + url);
         }
 
-        public static String getDriverName() {
-            return DRIVER_NAME;
-        }
-
-        static void setDriverName(String driverName) {
+        void setDriverName(String driverName) {
             DRIVER_NAME = driverName;
-        }
-
-        public String getUrl() {
-            return url;
         }
 
         void setUrl(String url) {
             this.url = url;
-        }
-
-        public Connection getConnection() {
-            return connection;
         }
 
         public void setConnection(Connection connection) {
