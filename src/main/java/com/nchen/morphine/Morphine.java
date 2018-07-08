@@ -1,11 +1,12 @@
 package com.nchen.morphine;
 
-import java.io.IOException;
+import org.reflections.Reflections;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
+import java.util.Set;
 
 public class Morphine {
     private static Morphine morphine = null;
@@ -27,13 +28,12 @@ public class Morphine {
     public Morphine build() {
         try {
             configuration.init();
-            List<Class> entities = MorphineEntityScanner.scanPackageForEntities(scanPackage);
+            Reflections reflections = new Reflections(scanPackage);
+            Set<Class<?>> entities = reflections.getTypesAnnotatedWith(Entity.class);
             MorphineEntityInit.createTables(entities);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
             e.printStackTrace();
         }
         return this;
@@ -105,5 +105,4 @@ public class Morphine {
             this.password = password;
         }
     }
-
 }

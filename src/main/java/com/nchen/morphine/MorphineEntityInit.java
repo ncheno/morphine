@@ -1,7 +1,7 @@
 package com.nchen.morphine;
 
 import java.lang.reflect.Field;
-import java.util.List;
+import java.util.Set;
 
 public class MorphineEntityInit {
     private final static String CREATE_TABLE = "CREATE TABLE IF NOT EXISTS";
@@ -14,7 +14,7 @@ public class MorphineEntityInit {
         String name;
         ColumnBuilder[] columns;
 
-        static TableBuilder build(Class entity) {
+        static TableBuilder build(Class<?> entity) {
             TableBuilder builder = new TableBuilder();
             builder.name = getTableName(entity);
             builder.columns = getColumns(entity);
@@ -74,18 +74,18 @@ public class MorphineEntityInit {
     }
 
 
-    public static void createTables(List<Class> entities) {
-        for (Class entity : entities) {
+    public static void createTables(Set<Class<?>> entities) {
+        for (Class<?> entity : entities) {
             TableBuilder tableBuilder = TableBuilder.build(entity);
             tableBuilder.create();
         }
     }
 
-    private static String getTableName(Class entity) {
+    private static String getTableName(Class<?> entity) {
         String table;
 
         if(entity.isAnnotationPresent(Table.class)) {
-            table = ((Table)entity.getAnnotation(Table.class)).value();
+            table = entity.getAnnotation(Table.class).value();
         } else {
             table = entity.getSimpleName().toUpperCase();
         }
@@ -93,7 +93,7 @@ public class MorphineEntityInit {
         return table.toUpperCase();
     }
 
-    private static TableBuilder.ColumnBuilder[] getColumns(Class entity) {
+    private static TableBuilder.ColumnBuilder[] getColumns(Class<?> entity) {
         Field fields[] = entity.getDeclaredFields();
         TableBuilder.ColumnBuilder[] columns = new TableBuilder.ColumnBuilder[fields.length];
 
