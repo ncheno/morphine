@@ -1,4 +1,4 @@
-package com.nchen.morphine;
+package com.nchen.morphine.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

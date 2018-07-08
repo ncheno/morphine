@@ -1,5 +1,7 @@
 package com.nchen.morphine;
 
+import com.nchen.morphine.annotations.Entity;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;

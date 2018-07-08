@@ -1,5 +1,6 @@
 package com.nchen.morphine;
 
+import com.nchen.morphine.annotations.Entity;
 import org.reflections.Reflections;
 
 import java.sql.Connection;
@@ -10,12 +11,11 @@ import java.util.Set;
 
 public class Morphine {
     private static Morphine morphine = null;
-    private Configuration configuration = null;
+    private DbConfiguration dbConfiguration = null;
     private String scanPackage;
-    private static final String JDBC = "jdbc:mysql://";
 
     private Morphine() {
-        configuration = new Configuration();
+        dbConfiguration = new DbConfiguration();
     }
 
     public static Morphine create() {
@@ -27,7 +27,7 @@ public class Morphine {
 
     public Morphine build() {
         try {
-            configuration.init();
+            dbConfiguration.init();
             Reflections reflections = new Reflections(scanPackage);
             Set<Class<?>> entities = reflections.getTypesAnnotatedWith(Entity.class);
             MorphineEntityInit.createTables(entities);
@@ -42,7 +42,7 @@ public class Morphine {
     public void execute(String sql) {
         Statement statement = null;
         try {
-            statement = configuration.connection.createStatement();
+            statement = dbConfiguration.connection.createStatement();
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -60,12 +60,12 @@ public class Morphine {
     }
 
     public Morphine setDbUrl(String url) {
-        configuration.setUrl(url);
+        dbConfiguration.setUrl(url);
         return this;
     }
 
     public Morphine setDriverName(String driverName) {
-        configuration.setDriverName(driverName);
+        dbConfiguration.setDriverName(driverName);
         return this;
     }
 
@@ -73,7 +73,7 @@ public class Morphine {
         this.scanPackage = scanPackage;
     }
 
-    private class Configuration {
+    private class DbConfiguration {
         String DRIVER_NAME = "com.mysql.jdbc.Driver";
         String url = null;
         Connection connection = null;
@@ -82,7 +82,7 @@ public class Morphine {
 
         void init() throws ClassNotFoundException, SQLException {
            Class.forName(DRIVER_NAME);
-           connection = DriverManager.getConnection(JDBC + url);
+           connection = DriverManager.getConnection(url);
         }
 
         void setDriverName(String driverName) {
