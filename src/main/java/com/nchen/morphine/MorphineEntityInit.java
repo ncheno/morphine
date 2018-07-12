@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -17,11 +18,13 @@ public class MorphineEntityInit {
     private final static String UNIQUE = "UNIQUE";
     private final static String CREATE_TABLE_STATEMENT = "CREATE TABLE IF NOT EXISTS %s (%s)";
     private final static String PRIMARY_KEY_STATEMENT = ", PRIMARY KEY (%s)";
+    private final static String FOREIGN_KEY_STATEMENT = "FOREIGN KEY %s(%s) REFERENCES %s(%s)";
+
 
     private static class TableBuilder {
         String name;
         List<ColumnBuilder> columns;
-        List<String> foreignKeyList = new ArrayList<>();
+        List<ForeignKeyColumnBuilder> foreignKeyList = new ArrayList<>();
 
         static TableBuilder build(Class<?> entity) {
             TableBuilder builder = new TableBuilder();
@@ -31,7 +34,7 @@ public class MorphineEntityInit {
         }
 
         void create() {
-            String sql = createSql(name, columns);
+            String sql = createSql(name, columns, foreignKeyList);
             Morphine.getMorphine().execute(sql);
         }
 
@@ -40,11 +43,19 @@ public class MorphineEntityInit {
             List<TableBuilder.ColumnBuilder> columns = new ArrayList<>(fields.length);
 
             for(Field field : fields) {
-                ColumnBuilder columnBuilder = new ColumnBuilder(this);
+                ColumnBuilder columnBuilder = createColumn();
                 columns.add(getColumnDefinition(columnBuilder, field));
             }
 
             return columns;
+        }
+
+        ColumnBuilder createColumn() {
+            return new ColumnBuilder(this);
+        }
+
+        ForeignKeyColumnBuilder createForeignKey() {
+            return new ForeignKeyColumnBuilder(this);
         }
 
         private class ColumnBuilder {
@@ -52,7 +63,6 @@ public class MorphineEntityInit {
             String name;
             String type;
             String constraints = "";
-            boolean isForeignKey;
 
             ColumnBuilder(TableBuilder tableBuilder) {
                 this.tableBuilder = tableBuilder;
@@ -60,6 +70,23 @@ public class MorphineEntityInit {
 
             String getQuery() {
                 return name + " " + type + " " + constraints;
+            }
+        }
+
+        private class ForeignKeyColumnBuilder extends ColumnBuilder {
+            String referencedTable;
+            String referencedId;
+
+            ForeignKeyColumnBuilder(TableBuilder tableBuilder) {
+                super(tableBuilder);
+            }
+
+            String getForeignKeySql() {
+                return String.format(FOREIGN_KEY_STATEMENT, getForeignKeyName(), name, referencedTable, referencedId);
+            }
+
+            String getForeignKeyName() {
+                return "fk_" + referencedTable;
             }
         }
     }
@@ -74,14 +101,26 @@ public class MorphineEntityInit {
     private static String getColumnsSql(List<TableBuilder.ColumnBuilder> columns) {
         List<String> columnList = columns
                 .stream()
+                .filter(Objects::nonNull)
                 .map(column -> column.getQuery())
                 .collect(Collectors.toList());
         return String.join(", ", columnList);
     }
 
-    private static String createSql(String tableName, List<TableBuilder.ColumnBuilder> columns) {
+    private static String getForeignKeysSql(List<TableBuilder.ForeignKeyColumnBuilder> columns) {
+        List<String> columnList = columns
+                .stream()
+                .map(column -> column.getForeignKeySql())
+                .collect(Collectors.toList());
+        return String.join(", ", columnList);
+    }
+
+    private static String createSql(String tableName, List<TableBuilder.ColumnBuilder> columns,
+                                    List<TableBuilder.ForeignKeyColumnBuilder> foreignKeyList) {
         String columnsSql = getColumnsSql(columns);
-        return String.format(CREATE_TABLE_STATEMENT, tableName, columnsSql);
+        String foreignKeys = getForeignKeysSql(foreignKeyList);
+        String sql = !StringUtils.isEmpty(foreignKeys) ? (columnsSql + ", " + foreignKeys) : columnsSql;
+        return String.format(CREATE_TABLE_STATEMENT, tableName, sql);
     }
 
     private static String getTableName(Class<?> entity) {
@@ -98,52 +137,71 @@ public class MorphineEntityInit {
 
 
     private static TableBuilder.ColumnBuilder getColumnDefinition(TableBuilder.ColumnBuilder columnBuilder, Field field) {
-
-        if(field.isAnnotationPresent(Column.class)) {
-            Column column = field.getAnnotation(Column.class);
-            columnBuilder.name =  StringUtils.defaultString(column.name(), field.getName());
-            columnBuilder.constraints = getColumnConstraints(column);
-            columnBuilder.type = getColumnType(field.getType().getSimpleName(), column.length());
-        } else {
-            columnBuilder.name = field.getName();
-            columnBuilder.type = getColumnType(field.getType().getSimpleName(), 0);
-        }
-
-        if(field.isAnnotationPresent(Id.class)) {
-            columnBuilder.constraints += NOT_NULL + " " + AUTO_INCREMENT + " " + PRIMARY_KEY;
-        }
-
         if(isForeignKeyExist(field)) {
-            columnBuilder.isForeignKey = true;
-            getForeignKeyDefinition(field);
+            TableBuilder.ForeignKeyColumnBuilder foreignKeyColumnBuilder = getForeignKeyDefinition(columnBuilder.tableBuilder.createForeignKey(), field);
+
+            if(foreignKeyColumnBuilder != null) {
+                columnBuilder.tableBuilder.foreignKeyList.add(foreignKeyColumnBuilder);
+                columnBuilder = foreignKeyColumnBuilder;
+            } else {
+                columnBuilder = null;
+            }
+        } else {
+            if (field.isAnnotationPresent(Column.class)) {
+                Column column = field.getAnnotation(Column.class);
+                columnBuilder.name = StringUtils.defaultString(column.name(), field.getName());
+                columnBuilder.constraints = getColumnConstraints(column);
+                columnBuilder.type = getColumnType(field.getType().getSimpleName(), column.length());
+            } else {
+                columnBuilder.name = field.getName();
+                columnBuilder.type = getColumnType(field.getType().getSimpleName(), 0);
+            }
+
+            if (field.isAnnotationPresent(Id.class)) {
+                columnBuilder.constraints += NOT_NULL + " " + AUTO_INCREMENT + " " + PRIMARY_KEY;
+            }
         }
 
         return columnBuilder;
     }
 
-    private static String getForeignKeyDefinition(Field field) {
-        Class<?> foreignKeyClass = field.getType();
+    private static TableBuilder.ForeignKeyColumnBuilder getForeignKeyDefinition(TableBuilder.ForeignKeyColumnBuilder foreignKeyColumnBuilder, Field referencedTable) {
+        Class<?> foreignKeyClass = referencedTable.getType();
 
         if(foreignKeyClass.isAnnotationPresent(Entity.class)) {
             Field[] fields = foreignKeyClass.getDeclaredFields();
-            String foreignKeyName = null;
-            Field foreignKeyColumn = null;
+            Field mappedByField = getFieldWithAnnotation(OneToOne.class, fields);
 
-            for(Field columnField : fields) {
-                if(columnField.isAnnotationPresent(Id.class)) {
-                    foreignKeyColumn = columnField;
-                    break;
-                }
-            }
+            if(mappedByField == null || mappedByField.getAnnotation(OneToOne.class).mappedBy().isEmpty())
+                return null; // foreign key is contained in other entity
+
+            Field foreignKeyColumn  = getFieldWithAnnotation(Id.class, fields);
+            String foreignKeyName;
 
             if(foreignKeyColumn.isAnnotationPresent(Column.class)) {
                 Column column = foreignKeyColumn.getAnnotation(Column.class);
-                foreignKeyName = StringUtils.defaultString(column.name(), field.getName());
+                foreignKeyName = StringUtils.defaultString(column.name(), foreignKeyColumn.getName());
             } else {
-                foreignKeyName = field.getName();
+                foreignKeyName = foreignKeyColumn.getName();
             }
 
+            foreignKeyColumnBuilder.name = referencedTable.getName() + "_" + foreignKeyName;
+            foreignKeyColumnBuilder.type = getColumnType(foreignKeyColumn.getType().getSimpleName(), 0);
+            foreignKeyColumnBuilder.referencedId = foreignKeyName;
+            foreignKeyColumnBuilder.referencedTable = referencedTable.getName();
+            return foreignKeyColumnBuilder;
+        } else {
+            return null;
         }
+    }
+
+    private static Field getFieldWithAnnotation(Class annotation, Field[] fields) {
+        for(Field columnField : fields) {
+            if(columnField.isAnnotationPresent(annotation)) {
+                return columnField;
+            }
+        }
+
         return null;
     }
 
@@ -155,11 +213,7 @@ public class MorphineEntityInit {
     }
 
     private static String getColumnType(String type, int length) {
-        try {
-            return ColumnType.valueOf(type.toUpperCase()).setLehgth(length).getSqlType();
-        } catch (IllegalArgumentException e) {
-            return type;
-        }
+        return ColumnType.valueOf(type.toUpperCase()).setLehgth(length).getSqlType();
     }
 
     private static String getColumnConstraints(Column column) {

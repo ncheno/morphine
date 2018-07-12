@@ -10,7 +10,7 @@ import static java.lang.annotation.ElementType.METHOD;
 @Target(value = {FIELD, METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Column {
-    String name() default "";
+    String name();
     boolean nullable() default true;
     boolean unique() default false;
     int length() default 0;

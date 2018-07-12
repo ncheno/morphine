@@ -9,7 +9,7 @@ public class Machine {
 
     String name;
 
-    @Column(nullable = false, length = 52)
+    @Column(name = "description", nullable = false, length = 52)
     String description;
 
     @OneToOne
