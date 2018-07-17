@@ -8,6 +8,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 
+@Deprecated
 public class MorphineEntityScanner {
     private final static String CLASS_EXT = ".class";
 

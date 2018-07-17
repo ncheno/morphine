@@ -1,6 +1,7 @@
 package com.nchen.morphine;
 
 import com.nchen.morphine.annotations.Entity;
+import com.nchen.morphine.builders.TableBuilder;
 import org.reflections.Reflections;
 
 import java.sql.Connection;
@@ -10,7 +11,6 @@ import java.sql.Statement;
 import java.util.Set;
 
 public class Morphine {
-    private static Morphine morphine = null;
     private DbConfiguration dbConfiguration = null;
     private String scanPackage;
 
@@ -19,24 +19,22 @@ public class Morphine {
     }
 
     public static Morphine create() {
-        if(morphine == null) {
-            morphine = new Morphine();
-        }
-        return morphine;
+        return new Morphine();
     }
 
-    public Morphine build() {
-        try {
-            dbConfiguration.init();
-            Reflections reflections = new Reflections(scanPackage);
-            Set<Class<?>> entities = reflections.getTypesAnnotatedWith(Entity.class);
-            MorphineEntityInit.createTables(entities);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public Morphine build() throws ClassNotFoundException, SQLException {
+        dbConfiguration.init();
+        Reflections reflections = new Reflections(scanPackage);
+        Set<Class<?>> entities = reflections.getTypesAnnotatedWith(Entity.class);
+        createTables(entities);
         return this;
+    }
+
+    private void createTables(Set<Class<?>> entities) {
+        for (Class<?> entity : entities) {
+            TableBuilder tableBuilder = TableBuilder.build(entity);
+            execute(tableBuilder.getSql());
+        }
     }
 
     public void execute(String sql) {
@@ -53,10 +51,6 @@ public class Morphine {
                 e.printStackTrace();
             }
         }
-    }
-
-    public static Morphine getMorphine() {
-        return morphine;
     }
 
     public Morphine setDbUrl(String url) {
@@ -81,8 +75,8 @@ public class Morphine {
         String password = null;
 
         void init() throws ClassNotFoundException, SQLException {
-           Class.forName(DRIVER_NAME);
-           connection = DriverManager.getConnection(url);
+            Class.forName(DRIVER_NAME);
+            connection = DriverManager.getConnection(url);
         }
 
         void setDriverName(String driverName) {

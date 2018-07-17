@@ -1,4 +1,4 @@
-package com.nchen.morphine;
+package com.nchen.morphine.builders;
 
 enum ColumnType {
     STRING("VARCHAR(%d)"), INT("INT(%d)"), INTEGER("INTEGER(%d)"), DOUBLE("DOUBLE");

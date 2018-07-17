@@ -11,7 +11,4 @@ public class Machine {
 
     @Column(name = "description", nullable = false, length = 52)
     String description;
-
-    @OneToOne
-    Driver driver;
 }

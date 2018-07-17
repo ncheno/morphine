@@ -9,7 +9,4 @@ public class Driver {
     @Id
     int id;
     String name;
-
-    @OneToOne(mappedBy = "machine")
-    Machine machine;
 }
