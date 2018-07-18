@@ -8,20 +8,20 @@ import java.lang.reflect.Field;
 
 import static com.nchen.morphine.builders.ForeignKeyBuilder.isForeignKeyExist;
 
-public class ColumnBuilder {
+class ColumnBuilder {
 
     private TableMetaData.ColumnMetaData columnMetaData;
     private Field columnData;
 
     static TableMetaData.ColumnMetaData build(TableMetaData.ColumnMetaData column, Field columnData) {
+        if(column == null)
+            throw new RuntimeException("Can`t create column without associated table");
+
+        if(columnData == null)
+            throw new RuntimeException("No information about column");
+
         ColumnBuilder columnBuilder = new ColumnBuilder(column, columnData);
         return columnBuilder.buildColumnData();
-    }
-
-    static String getColumnType(String type, int length) {
-        return ColumnType.valueOf(type.toUpperCase())
-                .setLehgth(length)
-                .getSqlType();
     }
 
     private ColumnBuilder(TableMetaData.ColumnMetaData columnMetaData, Field columnData) {
@@ -29,7 +29,7 @@ public class ColumnBuilder {
         this.columnData = columnData;
     }
 
-    private TableMetaData.ColumnMetaData buildColumnData() {
+    TableMetaData.ColumnMetaData buildColumnData() {
         if(isForeignKeyExist(columnData)) {
             createForeignKey();
         } else {
@@ -37,30 +37,22 @@ public class ColumnBuilder {
                 buildColumnDataFromAnnotation();
             } else {
                 columnMetaData.name = columnData.getName();
-                columnMetaData.type = getColumnType(columnData.getType().getSimpleName(), 0);
+                columnMetaData.type = BuildersUtils.getColumnType(columnData.getType().getSimpleName(), 0);
             }
 
             if (columnData.isAnnotationPresent(Id.class)) {
-                columnMetaData.constraints += BuilderConstants.NOT_NULL + " " +
-                        BuilderConstants.AUTO_INCREMENT + " " + BuilderConstants.PRIMARY_KEY;
+                columnMetaData.constraints += BuildersUtils.getIdConstraints();
             }
         }
 
         return columnMetaData;
     }
 
-    private void buildColumnDataFromAnnotation() {
+    void buildColumnDataFromAnnotation() {
         Column column = columnData.getAnnotation(Column.class);
         columnMetaData.name = StringUtils.defaultString(column.name(), columnData.getName());
-        columnMetaData.constraints = getColumnConstraints(column);
-        columnMetaData.type = getColumnType(columnData.getType().getSimpleName(), column.length());
-    }
-
-    private String getColumnConstraints(Column column) {
-        String constraints = "";
-        constraints = !column.nullable() ? constraints + BuilderConstants.NOT_NULL + " " : constraints;
-        constraints = column.unique() ? constraints + BuilderConstants.UNIQUE + " " : constraints;
-        return constraints.trim();
+        columnMetaData.constraints = BuildersUtils.getColumnConstraints(column);
+        columnMetaData.type = BuildersUtils.getColumnType(columnData.getType().getSimpleName(), column.length());
     }
 
     private void createForeignKey() {

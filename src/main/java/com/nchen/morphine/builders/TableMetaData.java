@@ -3,7 +3,7 @@ package com.nchen.morphine.builders;
 import java.util.ArrayList;
 import java.util.List;
 
-class TableMetaData {
+public class TableMetaData {
 
     private final static String FOREIGN_KEY_STATEMENT = "FOREIGN KEY %s(%s) REFERENCES %s(%s)";
 

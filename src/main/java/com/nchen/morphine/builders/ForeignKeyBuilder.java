@@ -7,8 +7,8 @@ import com.nchen.morphine.annotations.OneToOne;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Field;
-
-import static com.nchen.morphine.builders.ColumnBuilder.getColumnType;
+import java.util.Arrays;
+import java.util.List;
 
 public class ForeignKeyBuilder {
 
@@ -28,24 +28,24 @@ public class ForeignKeyBuilder {
         Class<?> foreignKeyClass = referencedTable.getType();
 
         if(foreignKeyClass.isAnnotationPresent(Entity.class)) {
-            Field[] fields = foreignKeyClass.getDeclaredFields();
-            Field mappedByField = getFieldWithAnnotation(OneToOne.class, fields);
+            List<Field> fields = Arrays.asList(foreignKeyClass.getDeclaredFields());
+            Field mappedByField = fields
+                    .stream()
+                    .filter(field -> field.isAnnotationPresent(OneToOne.class))
+                    .findFirst()
+                    .get();
 
             if(mappedByField == null || mappedByField.getAnnotation(OneToOne.class).mappedBy().isEmpty())
                 return null; // foreign key is contained in other entity
 
-            Field foreignKeyColumn = getFieldWithAnnotation(Id.class, fields);
-            String foreignKeyName;
-
-            if(foreignKeyColumn.isAnnotationPresent(Column.class)) {
-                Column column = foreignKeyColumn.getAnnotation(Column.class);
-                foreignKeyName = StringUtils.defaultString(column.name(), foreignKeyColumn.getName());
-            } else {
-                foreignKeyName = foreignKeyColumn.getName();
-            }
-
+            Field foreignKeyColumn =fields
+                    .stream()
+                    .filter(field -> field.isAnnotationPresent(Id.class))
+                    .findFirst()
+                    .get();
+            String foreignKeyName = getForeignKeyName(foreignKeyColumn);
             foreignKeyColumnBuilder.name = referencedTable.getName() + "_" + foreignKeyName;
-            foreignKeyColumnBuilder.type = getColumnType(foreignKeyColumn.getType().getSimpleName(), 0);
+            foreignKeyColumnBuilder.type = BuildersUtils.getColumnType(foreignKeyColumn.getType().getSimpleName(), 0);
             foreignKeyColumnBuilder.referencedId = foreignKeyName;
             foreignKeyColumnBuilder.referencedTable = referencedTable.getName();
             return foreignKeyColumnBuilder;
@@ -54,13 +54,16 @@ public class ForeignKeyBuilder {
         }
     }
 
-    private static Field getFieldWithAnnotation(Class annotation, Field[] fields) {
-        for(Field columnField : fields) {
-            if(columnField.isAnnotationPresent(annotation)) {
-                return columnField;
-            }
+    public static String getForeignKeyName(Field foreignKeyColumn) {
+        String foreignKeyName;
+
+        if(foreignKeyColumn.isAnnotationPresent(Column.class)) {
+            Column column = foreignKeyColumn.getAnnotation(Column.class);
+            foreignKeyName = StringUtils.defaultString(column.name(), foreignKeyColumn.getName());
+        } else {
+            foreignKeyName = foreignKeyColumn.getName();
         }
 
-        return null;
+        return foreignKeyName;
     }
 }

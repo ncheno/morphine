@@ -11,11 +11,12 @@ import java.sql.Statement;
 import java.util.Set;
 
 public class Morphine {
-    private DbConfiguration dbConfiguration = null;
+
+    private DbConfiguration dbConfig = null;
     private String scanPackage;
 
     private Morphine() {
-        dbConfiguration = new DbConfiguration();
+        dbConfig = new DbConfiguration();
     }
 
     public static Morphine create() {
@@ -23,24 +24,17 @@ public class Morphine {
     }
 
     public Morphine build() throws ClassNotFoundException, SQLException {
-        dbConfiguration.init();
+        dbConfig.init();
         Reflections reflections = new Reflections(scanPackage);
         Set<Class<?>> entities = reflections.getTypesAnnotatedWith(Entity.class);
         createTables(entities);
         return this;
     }
 
-    private void createTables(Set<Class<?>> entities) {
-        for (Class<?> entity : entities) {
-            TableBuilder tableBuilder = TableBuilder.build(entity);
-            execute(tableBuilder.getSql());
-        }
-    }
-
     public void execute(String sql) {
         Statement statement = null;
         try {
-            statement = dbConfiguration.connection.createStatement();
+            statement = dbConfig.connection.createStatement();
             statement.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -54,17 +48,24 @@ public class Morphine {
     }
 
     public Morphine setDbUrl(String url) {
-        dbConfiguration.setUrl(url);
+        dbConfig.setUrl(url);
         return this;
     }
 
     public Morphine setDriverName(String driverName) {
-        dbConfiguration.setDriverName(driverName);
+        dbConfig.setDriverName(driverName);
         return this;
     }
 
     public void setScanPackage(String scanPackage) {
         this.scanPackage = scanPackage;
+    }
+
+    private void createTables(Set<Class<?>> entities) {
+        for (Class<?> entity : entities) {
+            TableBuilder tableBuilder = TableBuilder.build(entity);
+            execute(tableBuilder.getSql());
+        }
     }
 
     private class DbConfiguration {
