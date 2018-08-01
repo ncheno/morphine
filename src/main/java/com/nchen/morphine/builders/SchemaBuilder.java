@@ -14,12 +14,10 @@ public class SchemaBuilder {
 
     public static SchemaBuilder build(Set<Class<?>> entities) {
         List<TableBuilder> tableBuilders = new ArrayList<>();
-        //List<TableMetaData.ForeignKeyColumnMetaData> foreignKeys = new ArrayList<>();
 
         for (Class<?> entity : entities) {
             TableBuilder tableBuilder = TableBuilder.build(entity);
             tableBuilders.add(tableBuilder);
-            // foreignKeys.addAll(tableBuilder.getTable().foreignKeys);
         }
 
         return new SchemaBuilder(tableBuilders).buildData();
