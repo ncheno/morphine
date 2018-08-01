@@ -21,6 +21,7 @@ public abstract class ForeignKeyBuilderBase {
 
         if (!isMappedReferencedTable(foreignKeyClass)) {
             return null;
+            //TODO:
 //            throw new RuntimeException("Can`t find referenced table");
         }
 

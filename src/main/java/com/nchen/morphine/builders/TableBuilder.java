@@ -20,8 +20,6 @@ public class TableBuilder {
 
     public String getSQL() {
         String columnsSQL = getColumnsSQL(table.columns);
-        // String foreignKeys = getForeignKeysSql(foreignKeys);
-        // String sql = !StringUtils.isEmpty(foreignKeys) ? (columnsSql + ", " + foreignKeys) : columnsSql;
         return String.format(SQLConstants.CREATE_TABLE_STATEMENT, table.name, columnsSQL);
     }
 
@@ -36,15 +34,6 @@ public class TableBuilder {
                 .stream()
                 .filter(Objects::nonNull)
                 .map(TableMetaData.ColumnMetaData::getSQL)
-                .collect(Collectors.toList());
-        return String.join(", ", columnList);
-    }
-
-    public String getForeignKeysSQL(List<TableMetaData.ForeignKeyColumnMetaData> foreignKeys) {
-        List<String> columnList = foreignKeys
-                .stream()
-                .filter(Objects::nonNull)
-                .map(TableMetaData.ForeignKeyColumnMetaData::getSQL)
                 .collect(Collectors.toList());
         return String.join(", ", columnList);
     }
