@@ -1,15 +1,20 @@
 package com.nchen.morphine.builders;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import static com.nchen.morphine.builders.SQLConstants.FOREIGN_KEY_STATEMENT;
 
 public class TableMetaData {
 
-    private final static String FOREIGN_KEY_STATEMENT = "FOREIGN KEY %s(%s) REFERENCES %s(%s)";
 
     String name;
-    List<ColumnMetaData> columns;
-    List<ForeignKeyColumnMetaData> foreignKeyList = new ArrayList<>();
+    ColumnMetaData primaryKey;
+    List<ColumnMetaData> columns = new ArrayList<>();
+    Set<ForeignKeyColumnMetaData> foreignKeys = new HashSet<>();
+    List<RelationTableMetaData> relationTables;
 
     ColumnMetaData createColumn() {
         return new ColumnMetaData(this);
@@ -17,6 +22,18 @@ public class TableMetaData {
 
     ForeignKeyColumnMetaData createForeignKey() {
         return new ForeignKeyColumnMetaData(this);
+    }
+
+    void addForeignKey(ForeignKeyColumnMetaData foreignKeyColumnMetaData) {
+        foreignKeys.add(foreignKeyColumnMetaData);
+    }
+
+    void addPrimaryKey(ColumnMetaData primaryKey) {
+        this.primaryKey = primaryKey;
+    }
+
+    void addColumn(ColumnMetaData columnMetaData) {
+        columns.add(columnMetaData);
     }
 
     class ColumnMetaData {
@@ -29,8 +46,12 @@ public class TableMetaData {
             this.tableMetaData = tableMetaData;
         }
 
-        String getQuery() {
+        String getSQL() {
             return name + " " + type + " " + constraints;
+        }
+
+        String getTableName() {
+            return tableMetaData.name;
         }
     }
 
@@ -42,12 +63,23 @@ public class TableMetaData {
             super(tableMetaData);
         }
 
-        String getForeignKeySql() {
+        String getFKSQL() {
             return String.format(FOREIGN_KEY_STATEMENT, getForeignKeyName(), name, referencedTable, referencedId);
         }
 
         String getForeignKeyName() {
-            return "fk_" + referencedTable;
+            return "FK_" + referencedTable;
+        }
+    }
+
+    class RelationTableMetaData {
+        String name;
+        TableMetaData parentTableMetaData;
+        ColumnMetaData primaryKey;
+        List<ColumnMetaData> columns;
+
+        RelationTableMetaData(TableMetaData tableMetaData) {
+            this.parentTableMetaData = tableMetaData;
         }
     }
 }

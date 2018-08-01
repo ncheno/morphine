@@ -1,9 +1,10 @@
 package com.nchen.morphine.builders;
 
+import com.nchen.morphine.annotations.Column;
 import com.nchen.morphine.annotations.Table;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -17,11 +18,11 @@ public class TableBuilder {
         return table;
     }
 
-    public String getSql() {
-        String columnsSql = getColumnsSql(table.columns);
-        // String foreignKeys = getForeignKeysSql(foreignKeyList);
+    public String getSQL() {
+        String columnsSQL = getColumnsSQL(table.columns);
+        // String foreignKeys = getForeignKeysSql(foreignKeys);
         // String sql = !StringUtils.isEmpty(foreignKeys) ? (columnsSql + ", " + foreignKeys) : columnsSql;
-        return String.format(BuilderConstants.CREATE_TABLE_STATEMENT, table.name, columnsSql);
+        return String.format(SQLConstants.CREATE_TABLE_STATEMENT, table.name, columnsSQL);
     }
 
     public static TableBuilder build(Class<?> tableMetaData) {
@@ -30,11 +31,20 @@ public class TableBuilder {
         return tableBuilder;
     }
 
-    private String getColumnsSql(List<TableMetaData.ColumnMetaData> columns) {
+    public String getColumnsSQL(List<TableMetaData.ColumnMetaData> columns) {
         List<String> columnList = columns
                 .stream()
                 .filter(Objects::nonNull)
-                .map(TableMetaData.ColumnMetaData::getQuery)
+                .map(TableMetaData.ColumnMetaData::getSQL)
+                .collect(Collectors.toList());
+        return String.join(", ", columnList);
+    }
+
+    public String getForeignKeysSQL(List<TableMetaData.ForeignKeyColumnMetaData> foreignKeys) {
+        List<String> columnList = foreignKeys
+                .stream()
+                .filter(Objects::nonNull)
+                .map(TableMetaData.ForeignKeyColumnMetaData::getSQL)
                 .collect(Collectors.toList());
         return String.join(", ", columnList);
     }
@@ -45,32 +55,47 @@ public class TableBuilder {
     }
 
     private TableMetaData buildTable() {
-        table.name = getTableName();
-        table.columns = getColumns();
+        addTableName();
+        addColumns();
+        addForeignKeys();
         return table;
     }
 
-    private String getTableName() {
-        String table;
 
-        if (tableMetaInfo.isAnnotationPresent(Table.class)) {
-            table = tableMetaInfo.getAnnotation(Table.class).value();
-        } else {
-            table = tableMetaInfo.getSimpleName().toUpperCase();
-        }
-
-        return table.toUpperCase();
+    private void addTableName() {
+        String name = tableMetaInfo.isAnnotationPresent(Table.class)
+                ? tableMetaInfo.getAnnotation(Table.class).value()
+                : tableMetaInfo.getSimpleName();
+        table.name = name.toUpperCase();
     }
 
-    private List<TableMetaData.ColumnMetaData> getColumns() {
-        Field fields[] = tableMetaInfo.getDeclaredFields();
-        List<TableMetaData.ColumnMetaData> columns = new ArrayList<>(fields.length);
+    private void addColumns() {
+        List<Field> fields = Arrays.asList(tableMetaInfo.getDeclaredFields());
+        fields.stream()
+                .filter(field -> field.isAnnotationPresent(Column.class))
+                .forEach(field -> {
+                    TableMetaData.ColumnMetaData columnMetaData;
+                    try {
+                        columnMetaData = ColumnBuilder.build(table.createColumn(), field);
+                        table.addColumn(columnMetaData);
+                    } catch (NoSuchFieldException e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
 
-        for (Field field : fields) {
-            TableMetaData.ColumnMetaData columnMetaData = ColumnBuilder.build(table.createColumn(), field);
-            columns.add(columnMetaData);
-        }
-
-        return columns;
+    private void addForeignKeys() {
+        List<Field> fields = Arrays.asList(tableMetaInfo.getDeclaredFields());
+        fields.stream()
+                .filter(BuildersUtils::isForeignKeyExist)
+                .forEach(field -> {
+                    TableMetaData.ForeignKeyColumnMetaData foreignKeyColumnMetaData;
+                    try {
+                        foreignKeyColumnMetaData = ForeignKeyBuilder.build(table.createForeignKey(), field);
+                        table.addForeignKey(foreignKeyColumnMetaData);
+                    } catch (NoSuchFieldException e) {
+                        e.printStackTrace();
+                    }
+                });
     }
 }

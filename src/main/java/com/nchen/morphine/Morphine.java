@@ -64,7 +64,7 @@ public class Morphine {
     private void createTables(Set<Class<?>> entities) {
         for (Class<?> entity : entities) {
             TableBuilder tableBuilder = TableBuilder.build(entity);
-            execute(tableBuilder.getSql());
+            execute(tableBuilder.getSQL());
         }
     }
 

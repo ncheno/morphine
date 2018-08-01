@@ -17,7 +17,9 @@ public class ColumnBuilderTests {
 
     private class TestEntity {
         @Id
+        @Column
         int id;
+        @Column
         String testField;
         @Column(name = "test_field", length = 100, nullable = false)
         String testFieldWithAnnotation;
@@ -31,17 +33,17 @@ public class ColumnBuilderTests {
     }
 
     @Test(expected = RuntimeException.class)
-    public void buildColumnDataWithNullColumnMetaDataTest() {
+    public void buildColumnDataWithNullColumnMetaDataTest() throws NoSuchFieldException {
         ColumnBuilder.build(null, columnData);
     }
 
     @Test(expected = RuntimeException.class)
-    public void buildColumnDataWithNullColumnDataTest() {
+    public void buildColumnDataWithNullColumnDataTest() throws NoSuchFieldException {
         ColumnBuilder.build(columnMetaData, null);
     }
 
     @Test
-    public void buildColumnDataTest() {
+    public void buildColumnDataTest() throws NoSuchFieldException {
         TableMetaData.ColumnMetaData columnMetaDataRes = ColumnBuilder.build(columnMetaData, columnData);
 
         Assert.assertNotNull(columnMetaDataRes);
