@@ -2,15 +2,15 @@ package com.nchen.morphine.builders;
 
 import com.nchen.morphine.annotations.*;
 import org.apache.commons.lang3.StringUtils;
+import org.reflections.ReflectionUtils;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.ParameterizedType;
 
 public class BuildersUtils {
 
-    public static String getColumnType(String javaType, int length) {
-        return ColumnType.valueOf(javaType.toUpperCase())
+    public static String getColumnType(Class<?> javaType, int length) {
+        return ColumnType.valueOf(javaType.getSimpleName().toUpperCase())
                 .setLength(length)
                 .getSqlType();
     }
@@ -31,8 +31,7 @@ public class BuildersUtils {
     }
 
     public static Field findId(Class<?> entity) {
-        List<Field> fields = Arrays.asList(entity.getDeclaredFields());
-        return fields.stream()
+        return ReflectionUtils.getAllFields(entity).stream()
                 .filter(field -> field.isAnnotationPresent(Id.class))
                 .findFirst().orElseThrow(() -> new RuntimeException("Does not found primary key"));
     }
@@ -40,5 +39,14 @@ public class BuildersUtils {
     public static boolean isForeignKeyExist(Field field) {
         return field.isAnnotationPresent(ManyToOne.class)
                 || field.isAnnotationPresent(OneToOne.class);
+    }
+
+    public static Class<?> getGenericTypeOfCollection(Field field) {
+        ParameterizedType listType = (ParameterizedType) field.getGenericType();
+        return (Class<?>) listType.getActualTypeArguments()[0];
+    }
+
+    public static boolean isEntity(Class<?> entity) {
+        return entity.isAnnotationPresent(Entity.class);
     }
 }

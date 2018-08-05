@@ -21,8 +21,6 @@ public abstract class ForeignKeyBuilderBase {
 
         if (!isMappedReferencedTable(foreignKeyClass)) {
             return null;
-            //TODO:
-//            throw new RuntimeException("Can`t find referenced table");
         }
 
         foreignKeyMetaData.name = joinColumn();
@@ -43,8 +41,10 @@ public abstract class ForeignKeyBuilderBase {
 
     private void setReferencedIdAndTable(Class<?> foreignKeyClass) {
         Field id = BuildersUtils.findId(foreignKeyClass);
-        foreignKeyMetaData.type = BuildersUtils.getColumnType(id.getType().getSimpleName(), ColumnType.DEFAULT_INT_LENGTH);
-        foreignKeyMetaData.referencedId = BuildersUtils.defaultColumnName(id.getAnnotation(Column.class).name(), id.getName());
+        foreignKeyMetaData.type = BuildersUtils
+                .getColumnType(id.getType(), ColumnType.DEFAULT_INT_LENGTH);
+        foreignKeyMetaData.referencedId = BuildersUtils
+                .defaultColumnName(id.getAnnotation(Column.class).name(), id.getName());
     }
 
     private boolean isMappedReferencedTable(Class<?> foreignKeyClass) throws NoSuchFieldException {

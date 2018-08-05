@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import java.lang.reflect.Field;
 
-public class ForeignKeyBuilderTests {
+public class ForeignKeyResolverTests {
 
     private TableMetaData table;
     private static final String MACHINE = "MACHINE";
@@ -26,7 +26,7 @@ public class ForeignKeyBuilderTests {
         table.name = DRIVER;
         Field documents = Driver.class.getDeclaredField(DOCUMENTS.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNotNull(foreignKey);
         Assert.assertEquals(DOCUMENTS, foreignKey.referencedTable);
@@ -37,7 +37,7 @@ public class ForeignKeyBuilderTests {
         table.name = DRIVER;
         Field documents = Driver.class.getDeclaredField(DOCUMENTS.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNotNull(foreignKey);
         Assert.assertEquals("documents_id", foreignKey.name);
@@ -48,7 +48,7 @@ public class ForeignKeyBuilderTests {
         table.name = DRIVER;
         Field documents = Driver.class.getDeclaredField(DOCUMENTS.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNotNull(foreignKey);
         Assert.assertEquals("docId", foreignKey.referencedId);
@@ -59,7 +59,7 @@ public class ForeignKeyBuilderTests {
         table.name = MACHINE;
         Field documents = Machine.class.getDeclaredField(DRIVER.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNotNull(foreignKey);
         Assert.assertEquals(DRIVER, foreignKey.referencedTable);
@@ -70,7 +70,7 @@ public class ForeignKeyBuilderTests {
         table.name = MACHINE;
         Field documents = Machine.class.getDeclaredField(DRIVER.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNotNull(foreignKey);
         Assert.assertEquals("driver_id", foreignKey.name);
@@ -81,7 +81,7 @@ public class ForeignKeyBuilderTests {
         table.name = MACHINE;
         Field documents = Machine.class.getDeclaredField(DRIVER.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNotNull(foreignKey);
         Assert.assertEquals("dId", foreignKey.referencedId);
@@ -92,7 +92,7 @@ public class ForeignKeyBuilderTests {
         table.name = DOCUMENTS;
         Field documents = Documents.class.getDeclaredField(DRIVER.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNull(foreignKey);
     }
@@ -102,7 +102,7 @@ public class ForeignKeyBuilderTests {
         table.name = DRIVER;
         Field documents = Driver.class.getDeclaredField(MACHINE.toLowerCase());
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyBuilder.build(table.createForeignKey(), documents);
+                ForeignKeyResolver.build(table.createForeignKey(), documents);
 
         Assert.assertNull(foreignKey);
     }

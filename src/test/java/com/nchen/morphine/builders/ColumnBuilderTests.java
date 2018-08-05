@@ -27,8 +27,8 @@ public class ColumnBuilderTests {
 
     @Before
     public void init() throws NoSuchFieldException {
-        TableMetaData tableMetaData = Mockito.mock(TableMetaData.class);
-        columnMetaData = tableMetaData.new ColumnMetaData(tableMetaData);
+        TableMetaData tableMetaData = new TableMetaData();
+        columnMetaData = tableMetaData.createColumn();
         columnData = TestEntity.class.getDeclaredField("testField");
     }
 

@@ -1,20 +1,17 @@
 package com.nchen.morphine.builders;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.nchen.morphine.builders.SQLConstants.FOREIGN_KEY_STATEMENT;
 
 public class TableMetaData {
 
-
+    TableMetaData parent;
     String name;
     ColumnMetaData primaryKey;
     List<ColumnMetaData> columns = new ArrayList<>();
     Set<ForeignKeyColumnMetaData> foreignKeys = new HashSet<>();
-    List<RelationTableMetaData> relationTables;
+    List<TableMetaData> joinTables = new ArrayList<>();
 
     ColumnMetaData createColumn() {
         return new ColumnMetaData(this);
@@ -36,13 +33,16 @@ public class TableMetaData {
         columns.add(columnMetaData);
     }
 
+    void addJoinTable(TableMetaData relaton) { joinTables.add(relaton);}
+
     class ColumnMetaData {
+
         TableMetaData tableMetaData;
         String name;
         String type;
         String constraints = "";
 
-        ColumnMetaData(TableMetaData tableMetaData) {
+        private ColumnMetaData(TableMetaData tableMetaData) {
             this.tableMetaData = tableMetaData;
         }
 
@@ -56,10 +56,11 @@ public class TableMetaData {
     }
 
     class ForeignKeyColumnMetaData extends ColumnMetaData {
+
         String referencedTable;
         String referencedId;
 
-        ForeignKeyColumnMetaData(TableMetaData tableMetaData) {
+        private ForeignKeyColumnMetaData(TableMetaData tableMetaData) {
             super(tableMetaData);
         }
 
@@ -68,18 +69,7 @@ public class TableMetaData {
         }
 
         String getForeignKeyName() {
-            return "FK_" + referencedTable;
-        }
-    }
-
-    class RelationTableMetaData {
-        String name;
-        TableMetaData parentTableMetaData;
-        ColumnMetaData primaryKey;
-        List<ColumnMetaData> columns;
-
-        RelationTableMetaData(TableMetaData tableMetaData) {
-            this.parentTableMetaData = tableMetaData;
+            return ("FK_" + getTableName() + "_" + referencedTable + "_" + name).toUpperCase();
         }
     }
 }

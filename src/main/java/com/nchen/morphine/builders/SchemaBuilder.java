@@ -1,5 +1,7 @@
 package com.nchen.morphine.builders;
 
+import com.nchen.morphine.MorphineManager;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +28,7 @@ public class SchemaBuilder {
     private SchemaBuilder buildData() {
         createTables();
         createForeignKeys();
+        createJoinTable();
         return this;
     }
 
@@ -33,11 +36,11 @@ public class SchemaBuilder {
         this.tableBuilders = tableBuilders;
     }
 
-    public void createTables() {
+    private void createTables() {
         tableBuilders.forEach(builder -> execute(builder.getSQL()));
     }
 
-    public void createForeignKeys() {
+    private void createForeignKeys() {
         tableBuilders.forEach(builder -> builder.getTable()
                 .foreignKeys.stream()
                 .filter(Objects::nonNull)
@@ -47,17 +50,28 @@ public class SchemaBuilder {
                 }));
     }
 
-    public void addNewColumn(TableMetaData.ColumnMetaData column) {
+    private void createJoinTable() {
+        tableBuilders.forEach(builder -> builder.getTable()
+                .joinTables.stream()
+                .filter(Objects::nonNull)
+                .forEach(joinTable -> {
+                    execute(TableBuilder.build(joinTable).getSQL());
+                    joinTable.foreignKeys.forEach(this::addNewFK);
+                }));
+    }
+
+    private void addNewColumn(TableMetaData.ColumnMetaData column) {
         String sql = String.format(ADD_COLUMN, column.getTableName(), column.getSQL());
         execute(sql);
     }
 
-    public void addNewFK(TableMetaData.ForeignKeyColumnMetaData fk) {
+    private void addNewFK(TableMetaData.ForeignKeyColumnMetaData fk) {
         String sql = String.format(ADD_FOREIGN_KEY, fk.getTableName(), fk.getFKSQL());
         execute(sql);
     }
 
     private void execute(String sql) {
         System.out.println(sql);
+        MorphineManager.getMorphine().execute(sql);
     }
 }

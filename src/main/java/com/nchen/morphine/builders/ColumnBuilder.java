@@ -42,6 +42,6 @@ class ColumnBuilder {
         Column column = columnData.getAnnotation(Column.class);
         columnMetaData.name = BuildersUtils.defaultColumnName(column.name(), columnData.getName());
         columnMetaData.constraints = BuildersUtils.getColumnConstraints(column);
-        columnMetaData.type = BuildersUtils.getColumnType(columnData.getType().getSimpleName(), column.length());
+        columnMetaData.type = BuildersUtils.getColumnType(columnData.getType(), column.length());
     }
 }

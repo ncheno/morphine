@@ -7,7 +7,7 @@ import com.nchen.morphine.annotations.OneToOne;
 
 import java.lang.reflect.Field;
 
-final public class ForeignKeyBuilder {
+final public class ForeignKeyResolver {
 
     public static TableMetaData.ForeignKeyColumnMetaData build(TableMetaData.ForeignKeyColumnMetaData foreignKeyMetaData,
                                                                Field referencedTableData) throws NoSuchFieldException {

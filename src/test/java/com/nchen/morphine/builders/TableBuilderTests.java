@@ -1,6 +1,7 @@
 package com.nchen.morphine.builders;
 
 import com.nchen.morphine.entities.Driver;
+import com.nchen.morphine.entities.Machine;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

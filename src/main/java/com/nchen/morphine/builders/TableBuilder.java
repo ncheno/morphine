@@ -1,7 +1,11 @@
 package com.nchen.morphine.builders;
 
+import com.google.common.base.Predicate;
 import com.nchen.morphine.annotations.Column;
+import com.nchen.morphine.annotations.JoinTable;
+import com.nchen.morphine.annotations.ManyToMany;
 import com.nchen.morphine.annotations.Table;
+import org.reflections.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -21,6 +25,10 @@ public class TableBuilder {
     public String getSQL() {
         String columnsSQL = getColumnsSQL(table.columns);
         return String.format(SQLConstants.CREATE_TABLE_STATEMENT, table.name, columnsSQL);
+    }
+
+    public static TableBuilder build(TableMetaData tableMetaData) {
+        return new TableBuilder(tableMetaData);
     }
 
     public static TableBuilder build(Class<?> tableMetaData) {
@@ -43,10 +51,15 @@ public class TableBuilder {
         this.tableMetaInfo = tableMetaInfo;
     }
 
+    private TableBuilder(TableMetaData tableMetaData) {
+        this.table = tableMetaData;
+    }
+
     private TableMetaData buildTable() {
         addTableName();
         addColumns();
         addForeignKeys();
+        addJoinTables();
         return table;
     }
 
@@ -59,9 +72,8 @@ public class TableBuilder {
     }
 
     private void addColumns() {
-        List<Field> fields = Arrays.asList(tableMetaInfo.getDeclaredFields());
-        fields.stream()
-                .filter(field -> field.isAnnotationPresent(Column.class))
+        ReflectionUtils.getAllFields(tableMetaInfo,
+                (Predicate<Field>) field -> field.isAnnotationPresent(Column.class))
                 .forEach(field -> {
                     TableMetaData.ColumnMetaData columnMetaData;
                     try {
@@ -71,6 +83,7 @@ public class TableBuilder {
                         e.printStackTrace();
                     }
                 });
+
     }
 
     private void addForeignKeys() {
@@ -80,8 +93,23 @@ public class TableBuilder {
                 .forEach(field -> {
                     TableMetaData.ForeignKeyColumnMetaData foreignKeyColumnMetaData;
                     try {
-                        foreignKeyColumnMetaData = ForeignKeyBuilder.build(table.createForeignKey(), field);
+                        foreignKeyColumnMetaData = ForeignKeyResolver.build(table.createForeignKey(), field);
                         table.addForeignKey(foreignKeyColumnMetaData);
+                    } catch (NoSuchFieldException e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
+
+    private void addJoinTables() {
+        ReflectionUtils.getAllFields(tableMetaInfo,
+                (Predicate<Field>) field -> field.isAnnotationPresent(ManyToMany.class)
+                        && field.isAnnotationPresent(JoinTable.class))
+                .forEach(field -> {
+                    TableMetaData joinTable;
+                    try {
+                        joinTable = ManyToManyBuilder.build(table, field);
+                        table.addJoinTable(joinTable);
                     } catch (NoSuchFieldException e) {
                         e.printStackTrace();
                     }
