@@ -5,6 +5,7 @@ import com.nchen.morphine.annotations.ManyToMany;
 import org.reflections.ReflectionUtils;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +43,6 @@ public class ManyToManyBuilder {
 
         TableMetaData table = new TableMetaData();
 
-
         if (isMappedBy(referencedEntity)) {
             JoinTable joinTable = referencedTableData.getDeclaredAnnotation(JoinTable.class);
             table.parent = tableMetaData;
@@ -54,7 +54,8 @@ public class ManyToManyBuilder {
         return table;
     }
 
-    private TableMetaData.ColumnMetaData createAndAddFKColumn(TableMetaData table, Class<?> referencedTable, String name) throws NoSuchFieldException {
+    private void createAndAddFKColumn(TableMetaData table, Class<?> referencedTable,
+                                                              String name) throws NoSuchFieldException {
         Field joinColumn = BuildersUtils.findId(referencedTable);
         TableMetaData.ForeignKeyColumnMetaData foreignKeyColumn = table.createForeignKey();
         foreignKeyColumn.name = name;
@@ -62,11 +63,11 @@ public class ManyToManyBuilder {
         foreignKeyColumn.constraints = SQLConstants.NOT_NULL;
         foreignKeyColumn.referencedId = joinColumn.getName();
         foreignKeyColumn.referencedTable = referencedTable.getSimpleName().toUpperCase();
+        CascadeType[] cascadeTypes = referencedTableData.getDeclaredAnnotation(JoinTable.class).cascade();
+        Collections.addAll(foreignKeyColumn.cascadeTypes, cascadeTypes);
         table.addForeignKey(foreignKeyColumn);
         table.addColumn(foreignKeyColumn);
-        return foreignKeyColumn;
     }
-
 
     private boolean isMappedBy(Class<?> referencedEntity) {
         return ReflectionUtils.getFields(referencedEntity)

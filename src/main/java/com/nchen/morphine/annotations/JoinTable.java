@@ -1,5 +1,7 @@
 package com.nchen.morphine.annotations;
 
+import com.nchen.morphine.builders.CascadeType;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -11,4 +13,5 @@ public @interface JoinTable {
     String name() default "";
     String joinColumn() default "";
     String inverseJoinColumn() default "";
+    CascadeType[] cascade() default {CascadeType.CASCADE_ALL};
 }

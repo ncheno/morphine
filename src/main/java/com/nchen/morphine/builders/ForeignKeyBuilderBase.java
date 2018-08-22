@@ -3,6 +3,8 @@ package com.nchen.morphine.builders;
 import com.nchen.morphine.annotations.Column;
 
 import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Set;
 
 public abstract class ForeignKeyBuilderBase {
     private TableMetaData.ForeignKeyColumnMetaData foreignKeyMetaData;
@@ -16,6 +18,8 @@ public abstract class ForeignKeyBuilderBase {
 
     abstract String getConstraints();
 
+    abstract Set<CascadeType> getCascade();
+
     public TableMetaData.ForeignKeyColumnMetaData buildForeignKeyData() throws NoSuchFieldException {
         Class<?> foreignKeyClass = referencedTableData.getType();
 
@@ -25,7 +29,8 @@ public abstract class ForeignKeyBuilderBase {
 
         foreignKeyMetaData.name = joinColumn();
         foreignKeyMetaData.constraints = getConstraints();
-        foreignKeyMetaData.referencedTable = referencedTableData.getName().toUpperCase();
+        foreignKeyMetaData.referencedTable = referencedTableData.getType().getSimpleName().toUpperCase();
+        foreignKeyMetaData.cascadeTypes = getCascade();
         setReferencedIdAndTable(foreignKeyClass);
         return foreignKeyMetaData;
     }
@@ -41,15 +46,17 @@ public abstract class ForeignKeyBuilderBase {
 
     private void setReferencedIdAndTable(Class<?> foreignKeyClass) {
         Field id = BuildersUtils.findId(foreignKeyClass);
-        foreignKeyMetaData.type = BuildersUtils
-                .getColumnType(id.getType(), ColumnType.DEFAULT_INT_LENGTH);
-        foreignKeyMetaData.referencedId = BuildersUtils
-                .defaultColumnName(id.getAnnotation(Column.class).name(), id.getName());
+        foreignKeyMetaData.type = BuildersUtils.getColumnType(id.getType(), ColumnType.DEFAULT_INT_LENGTH);
+        foreignKeyMetaData.referencedId = BuildersUtils.defaultColumnName(id.getAnnotation(Column.class).name(), id.getName());
     }
 
     private boolean isMappedReferencedTable(Class<?> foreignKeyClass) throws NoSuchFieldException {
-        String mappedTable = foreignKeyMetaData.tableMetaData.name.toLowerCase();
-        Field mappedByField = foreignKeyClass.getDeclaredField(mappedTable);
-        return isMapped(mappedByField) && mappedBy(mappedByField).equals(referencedTableData.getName());
+        List<Field> fields = BuildersUtils.getFieldsByType(foreignKeyClass, referencedTableData.getDeclaringClass());
+        for (Field field : fields) {
+            Field mappedByField = foreignKeyClass.getDeclaredField(field.getName());
+            if (isMapped(mappedByField) && mappedBy(mappedByField).equals(referencedTableData.getName()))
+                return true;
+        }
+        return false;
     }
 }

@@ -4,6 +4,10 @@ import com.nchen.morphine.annotations.ManyToOne;
 import com.nchen.morphine.annotations.OneToMany;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ManyToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
 
@@ -29,5 +33,13 @@ public class ManyToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
     @Override
     String getConstraints() {
         return "";
+    }
+
+    @Override
+    Set<CascadeType> getCascade() {
+        CascadeType[] cascadeTypes = getReferencedTableData().getAnnotation(ManyToOne.class).cascade();
+        Set<CascadeType> res = new HashSet<>();
+        Collections.addAll(res, cascadeTypes);
+        return res;
     }
 }

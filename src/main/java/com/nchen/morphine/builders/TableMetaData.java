@@ -1,6 +1,8 @@
 package com.nchen.morphine.builders;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.nchen.morphine.builders.SQLConstants.FOREIGN_KEY_STATEMENT;
 
@@ -33,7 +35,9 @@ public class TableMetaData {
         columns.add(columnMetaData);
     }
 
-    void addJoinTable(TableMetaData relaton) { joinTables.add(relaton);}
+    void addJoinTable(TableMetaData relaton) {
+        joinTables.add(relaton);
+    }
 
     class ColumnMetaData {
 
@@ -59,6 +63,7 @@ public class TableMetaData {
 
         String referencedTable;
         String referencedId;
+        Set<CascadeType> cascadeTypes = new HashSet<>();
 
         private ForeignKeyColumnMetaData(TableMetaData tableMetaData) {
             super(tableMetaData);
@@ -69,7 +74,14 @@ public class TableMetaData {
         }
 
         String getForeignKeyName() {
-            return ("FK_" + getTableName() + "_" + referencedTable + "_" + name).toUpperCase();
+            return ("FK_" + getTableName() + "_" + referencedTable + "_" + name).toUpperCase() + getCascade();
+        }
+
+        String getCascade() {
+            return cascadeTypes
+                    .stream()
+                    .map(CascadeType::getValue)
+                    .collect(Collectors.joining(" "));
         }
     }
 }

@@ -6,6 +6,8 @@ import org.reflections.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class BuildersUtils {
 
@@ -49,4 +51,11 @@ public class BuildersUtils {
     public static boolean isEntity(Class<?> entity) {
         return entity.isAnnotationPresent(Entity.class);
     }
+
+    public static List<Field> getFieldsByType(Class<?> entity, Class<?> type) {
+        return ReflectionUtils.getAllFields(entity).stream()
+                .filter(field -> field.getType().isAssignableFrom(type))
+                .collect(Collectors.toList());
+    }
+
 }

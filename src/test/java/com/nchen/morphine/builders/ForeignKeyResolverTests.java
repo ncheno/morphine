@@ -1,109 +1,54 @@
 package com.nchen.morphine.builders;
 
-import com.nchen.morphine.entities.Documents;
-import com.nchen.morphine.entities.Driver;
+import com.nchen.morphine.annotations.Entity;
+import com.nchen.morphine.annotations.OneToOne;
 import com.nchen.morphine.entities.Machine;
+import com.nchen.morphine.entity.EntityId;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.lang.reflect.Field;
 
 public class ForeignKeyResolverTests {
 
-    private TableMetaData table;
-    private static final String MACHINE = "MACHINE";
-    private static final String DRIVER = "DRIVER";
-    private static final String DOCUMENTS = "DOCUMENTS";
+    @Entity
+    class SecondEntity extends EntityId {
+        @OneToOne(mappedBy = "firstEntityNotMapped")
+        private FirstEntity firstRelation;
 
-    @Before
-    public void before() {
-        table = new TableMetaData();
+        @OneToOne(mappedBy = "entity")
+        private FirstEntity secondRelation;
     }
 
+    class FirstEntity extends EntityId {
+        @OneToOne(joinColumn = "entity_id")
+        SecondEntity entity;
+    }
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
     @Test
-    public void testOneToOneRelationReferencedTable() throws NoSuchFieldException {
-        table.name = DRIVER;
-        Field documents = Driver.class.getDeclaredField(DOCUMENTS.toLowerCase());
+    public void testCorrectReferencedTable() throws NoSuchFieldException {
+        TableMetaData table = new TableMetaData();
+        table.name = "FIRSTENTITY";
+        Field documents = FirstEntity.class.getDeclaredField("entity");
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
                 ForeignKeyResolver.build(table.createForeignKey(), documents);
-
         Assert.assertNotNull(foreignKey);
-        Assert.assertEquals(DOCUMENTS, foreignKey.referencedTable);
+        Assert.assertEquals("SECONDENTITY", foreignKey.referencedTable);
     }
 
     @Test
-    public void testOneToOneRelationJoinColumnName() throws NoSuchFieldException {
-        table.name = DRIVER;
-        Field documents = Driver.class.getDeclaredField(DOCUMENTS.toLowerCase());
+    public void testCascadeType() throws NoSuchFieldException {
+        TableMetaData table = new TableMetaData();
+        table.name = "MACHINE";
+        Field documents = Machine.class.getDeclaredField("driver");
         TableMetaData.ForeignKeyColumnMetaData foreignKey =
                 ForeignKeyResolver.build(table.createForeignKey(), documents);
-
         Assert.assertNotNull(foreignKey);
-        Assert.assertEquals("documents_id", foreignKey.name);
-    }
-
-    @Test
-    public void testOneToOneRelationReferencedId() throws NoSuchFieldException {
-        table.name = DRIVER;
-        Field documents = Driver.class.getDeclaredField(DOCUMENTS.toLowerCase());
-        TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyResolver.build(table.createForeignKey(), documents);
-
-        Assert.assertNotNull(foreignKey);
-        Assert.assertEquals("docId", foreignKey.referencedId);
-    }
-
-    @Test
-    public void testManyToOneRelationReferencedTable() throws NoSuchFieldException {
-        table.name = MACHINE;
-        Field documents = Machine.class.getDeclaredField(DRIVER.toLowerCase());
-        TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyResolver.build(table.createForeignKey(), documents);
-
-        Assert.assertNotNull(foreignKey);
-        Assert.assertEquals(DRIVER, foreignKey.referencedTable);
-    }
-
-    @Test
-    public void testManyToOneRelationJoinColumnName() throws NoSuchFieldException {
-        table.name = MACHINE;
-        Field documents = Machine.class.getDeclaredField(DRIVER.toLowerCase());
-        TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyResolver.build(table.createForeignKey(), documents);
-
-        Assert.assertNotNull(foreignKey);
-        Assert.assertEquals("driver_id", foreignKey.name);
-    }
-
-    @Test
-    public void testManyToOneRelationReferencedId() throws NoSuchFieldException {
-        table.name = MACHINE;
-        Field documents = Machine.class.getDeclaredField(DRIVER.toLowerCase());
-        TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyResolver.build(table.createForeignKey(), documents);
-
-        Assert.assertNotNull(foreignKey);
-        Assert.assertEquals("dId", foreignKey.referencedId);
-    }
-
-    @Test
-    public void testNullOneToOneRelation() throws NoSuchFieldException {
-        table.name = DOCUMENTS;
-        Field documents = Documents.class.getDeclaredField(DRIVER.toLowerCase());
-        TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyResolver.build(table.createForeignKey(), documents);
-
-        Assert.assertNull(foreignKey);
-    }
-
-    @Test
-    public void testNullOneToManyRelation() throws NoSuchFieldException {
-        table.name = DRIVER;
-        Field documents = Driver.class.getDeclaredField(MACHINE.toLowerCase());
-        TableMetaData.ForeignKeyColumnMetaData foreignKey =
-                ForeignKeyResolver.build(table.createForeignKey(), documents);
-
-        Assert.assertNull(foreignKey);
+        Assert.assertEquals(CascadeType.CASCADE_ALL.getValue(), foreignKey.getCascade());
     }
 }

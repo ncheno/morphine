@@ -3,6 +3,7 @@ package com.nchen.morphine.builders;
 import com.nchen.morphine.annotations.OneToOne;
 
 import java.lang.reflect.Field;
+import java.util.Set;
 
 public class OneToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
 
@@ -28,5 +29,10 @@ public class OneToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
     @Override
     String getConstraints() {
         return SQLConstants.UNIQUE;
+    }
+
+    @Override
+    Set<CascadeType> getCascade() {
+        return null;
     }
 }

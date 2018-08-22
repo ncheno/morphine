@@ -6,7 +6,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 
@@ -19,10 +18,17 @@ public class ColumnBuilderTests {
         @Id
         @Column
         int id;
+
         @Column
         String testField;
+
         @Column(name = "test_field", length = 100, nullable = false)
         String testFieldWithAnnotation;
+
+        String notAnnotatedColumn;
+
+        @Column
+        Object notPrimitive;
     }
 
     @Before
@@ -72,5 +78,17 @@ public class ColumnBuilderTests {
         Assert.assertEquals("id", columnMetaDataRes.name);
         Assert.assertEquals("INT(11)", columnMetaDataRes.type);
         Assert.assertEquals("NOT NULL AUTO_INCREMENT PRIMARY KEY", columnMetaDataRes.constraints);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testNotAnnotatedField() throws NoSuchFieldException {
+        columnData = TestEntity.class.getDeclaredField("notAnnotatedColumn");
+        ColumnBuilder.build(columnMetaData, columnData);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNotPrimitiveColumn() throws Exception {
+        columnData = TestEntity.class.getDeclaredField("notPrimitive");
+        ColumnBuilder.build(columnMetaData, columnData);
     }
 }

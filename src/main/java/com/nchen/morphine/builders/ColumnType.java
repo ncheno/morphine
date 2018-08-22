@@ -1,9 +1,10 @@
 package com.nchen.morphine.builders;
 
 enum ColumnType {
-    STRING("VARCHAR(%d)"), INT("INT(%d)"), INTEGER("INTEGER(%d)"), DOUBLE("DOUBLE");
+    STRING("VARCHAR(%d)"), INT("INT(%d)"), INTEGER("INTEGER(%d)"), DOUBLE("DOUBLE"), BOOLEAN("TINYINT(%d)");
     public static final int DEFAULT_INT_LENGTH = 11;
     public static final int DEFAULT_STRING_LENGTH = 255;
+    public static final int DEFAULT_TINYINT_LENGTH = 255;
 
     private String sqlType;
     private int length = -1;
@@ -22,6 +23,8 @@ enum ColumnType {
             return String.format(sqlType, getLength(DEFAULT_STRING_LENGTH));
         if(this == INT || this == INTEGER)
             return String.format(sqlType, getLength(DEFAULT_INT_LENGTH));
+        if(this == BOOLEAN)
+            return String.format(sqlType, DEFAULT_TINYINT_LENGTH);
         return sqlType;
     }
 

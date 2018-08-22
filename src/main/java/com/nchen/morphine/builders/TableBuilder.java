@@ -63,7 +63,6 @@ public class TableBuilder {
         return table;
     }
 
-
     private void addTableName() {
         String name = tableMetaInfo.isAnnotationPresent(Table.class)
                 ? tableMetaInfo.getAnnotation(Table.class).value()
@@ -83,7 +82,6 @@ public class TableBuilder {
                         e.printStackTrace();
                     }
                 });
-
     }
 
     private void addForeignKeys() {
