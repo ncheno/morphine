@@ -15,7 +15,7 @@ public class Machine extends EntityId {
     String description;
 
     @ManyToOne(joinColumn = "driver_id")
-    Driver driver;
+    List<Driver> driverList;
 
     @ManyToMany(mappedBy = "machines")
     List<Driver> drivers;

@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Set;
 
 public abstract class ForeignKeyBuilderBase {
-    private TableMetaData.ForeignKeyColumnMetaData foreignKeyMetaData;
-    private Field referencedTableData;
+    protected TableMetaData.ForeignKeyColumnMetaData foreignKeyMetaData;
+    protected Field referencedTableData;
 
     abstract boolean isMapped(Field mappedByField);
 
@@ -20,8 +20,14 @@ public abstract class ForeignKeyBuilderBase {
 
     abstract Set<CascadeType> getCascade();
 
+    abstract Class<?> getForeignKeyTableType();
+
     public TableMetaData.ForeignKeyColumnMetaData buildForeignKeyData() throws NoSuchFieldException {
-        Class<?> foreignKeyClass = referencedTableData.getType();
+        Class<?> foreignKeyClass = getForeignKeyTableType();
+
+        if (!BuildersUtils.isEntity(foreignKeyClass)) {
+            throw new RuntimeException(foreignKeyClass.getSimpleName() + " is not entity");
+        }
 
         if (!isMappedReferencedTable(foreignKeyClass)) {
             return null;
@@ -29,7 +35,7 @@ public abstract class ForeignKeyBuilderBase {
 
         foreignKeyMetaData.name = joinColumn();
         foreignKeyMetaData.constraints = getConstraints();
-        foreignKeyMetaData.referencedTable = referencedTableData.getType().getSimpleName().toUpperCase();
+        foreignKeyMetaData.referencedTable = getForeignKeyTableType().getSimpleName().toUpperCase();
         foreignKeyMetaData.cascadeTypes = getCascade();
         setReferencedIdAndTable(foreignKeyClass);
         return foreignKeyMetaData;

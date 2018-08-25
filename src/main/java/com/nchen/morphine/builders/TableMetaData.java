@@ -1,8 +1,10 @@
 package com.nchen.morphine.builders;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.nchen.morphine.builders.SQLConstants.FOREIGN_KEY_STATEMENT;
 

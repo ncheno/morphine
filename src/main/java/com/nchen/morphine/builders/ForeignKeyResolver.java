@@ -17,20 +17,15 @@ final public class ForeignKeyResolver {
     }
 
     private static TableMetaData.ForeignKeyColumnMetaData buildForeignKeyData(TableMetaData.ForeignKeyColumnMetaData foreignKeyMetaData,
-                                                                       Field referencedTableData) throws NoSuchFieldException {
-        Class<?> foreignKeyClass = referencedTableData.getType();
+                                                                              Field referencedTableData) throws NoSuchFieldException {
         ForeignKeyBuilderBase foreignKeyBuilderBase;
 
-        if (!foreignKeyClass.isAnnotationPresent(Entity.class)) {
-            throw new RuntimeException(foreignKeyClass.getSimpleName() + " is not Entity");
-        } else {
-            if (referencedTableData.isAnnotationPresent(OneToOne.class)) {
-                foreignKeyBuilderBase = new OneToOneForeignKeyBuilder(foreignKeyMetaData, referencedTableData);
-                return foreignKeyBuilderBase.buildForeignKeyData();
-            } else if (referencedTableData.isAnnotationPresent(ManyToOne.class)) {
-                foreignKeyBuilderBase = new ManyToOneForeignKeyBuilder(foreignKeyMetaData, referencedTableData);
-                return foreignKeyBuilderBase.buildForeignKeyData();
-            }
+        if (referencedTableData.isAnnotationPresent(OneToOne.class)) {
+            foreignKeyBuilderBase = new OneToOneForeignKeyBuilder(foreignKeyMetaData, referencedTableData);
+            return foreignKeyBuilderBase.buildForeignKeyData();
+        } else if (referencedTableData.isAnnotationPresent(ManyToOne.class)) {
+            foreignKeyBuilderBase = new ManyToOneForeignKeyBuilder(foreignKeyMetaData, referencedTableData);
+            return foreignKeyBuilderBase.buildForeignKeyData();
         }
 
         return null;

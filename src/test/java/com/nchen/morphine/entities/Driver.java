@@ -11,7 +11,7 @@ public class Driver extends EntityId{
     @Column
     public String name;
 
-    @OneToMany(mappedBy = "driver")
+    @OneToMany(mappedBy = "driverList")
     public Machine machine;
 
     @OneToOne(joinColumn = "documents_id")

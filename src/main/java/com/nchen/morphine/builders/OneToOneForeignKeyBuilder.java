@@ -35,4 +35,9 @@ public class OneToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
     Set<CascadeType> getCascade() {
         return null;
     }
+
+    @Override
+    Class<?> getForeignKeyTableType() {
+        return referencedTableData.getType();
+    }
 }

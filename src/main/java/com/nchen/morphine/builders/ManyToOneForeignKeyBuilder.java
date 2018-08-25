@@ -4,15 +4,22 @@ import com.nchen.morphine.annotations.ManyToOne;
 import com.nchen.morphine.annotations.OneToMany;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class ManyToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
 
     public ManyToOneForeignKeyBuilder(TableMetaData.ForeignKeyColumnMetaData foreignKeyMetaData, Field referencedTableData) {
         super(foreignKeyMetaData, referencedTableData);
+    }
+
+    @Override
+    public TableMetaData.ForeignKeyColumnMetaData buildForeignKeyData() throws NoSuchFieldException {
+        if (!(referencedTableData.getType().isAssignableFrom(List.class)
+                || referencedTableData.getType().isAssignableFrom(Set.class))) {
+            throw new RuntimeException(referencedTableData.getName() + " has wrong mapping");
+        }
+
+        return super.buildForeignKeyData();
     }
 
     @Override
@@ -33,6 +40,11 @@ public class ManyToOneForeignKeyBuilder extends ForeignKeyBuilderBase {
     @Override
     String getConstraints() {
         return "";
+    }
+
+    @Override
+    Class<?> getForeignKeyTableType() {
+        return BuildersUtils.getGenericTypeOfCollection(referencedTableData);
     }
 
     @Override

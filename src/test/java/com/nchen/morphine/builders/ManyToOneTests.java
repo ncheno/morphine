@@ -22,9 +22,9 @@ public class ManyToOneTests {
                 {"DRIVER", Driver.class, "documents", "DOCUMENTS", "referencedTable"},
                 {"DRIVER", Driver.class, "documents", "documents_id", "name"},
                 {"DRIVER", Driver.class, "documents", "id", "referencedId"},
-                {"MACHINE", Machine.class, "driver", "DRIVER", "referencedTable"},
-                {"MACHINE", Machine.class, "driver", "driver_id", "name"},
-                {"MACHINE", Machine.class, "driver", "id", "referencedId"}
+                {"MACHINE", Machine.class, "driverList", "DRIVER", "referencedTable"},
+                {"MACHINE", Machine.class, "driverList", "driver_id", "name"},
+                {"MACHINE", Machine.class, "driverList", "id", "referencedId"}
         };
     }
 
