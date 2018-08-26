@@ -40,7 +40,7 @@ class ColumnBuilder {
                     + columnMetaData.tableMetaData.name + "' should be annotated by @Column annotation");
 
         Column column = columnData.getAnnotation(Column.class);
-        columnMetaData.name = BuildersUtils.defaultColumnName(column.name(), columnData.getName());
+        columnMetaData.name = BuildersUtils.getColumnName(columnData);
         columnMetaData.constraints = BuildersUtils.getColumnConstraints(column);
         columnMetaData.type = BuildersUtils.getColumnType(columnData.getType(), column.length());
     }

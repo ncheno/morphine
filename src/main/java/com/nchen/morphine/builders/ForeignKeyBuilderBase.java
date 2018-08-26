@@ -1,7 +1,5 @@
 package com.nchen.morphine.builders;
 
-import com.nchen.morphine.annotations.Column;
-
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +51,7 @@ public abstract class ForeignKeyBuilderBase {
     private void setReferencedIdAndTable(Class<?> foreignKeyClass) {
         Field id = BuildersUtils.findId(foreignKeyClass);
         foreignKeyMetaData.type = BuildersUtils.getColumnType(id.getType(), ColumnType.DEFAULT_INT_LENGTH);
-        foreignKeyMetaData.referencedId = BuildersUtils.defaultColumnName(id.getAnnotation(Column.class).name(), id.getName());
+        foreignKeyMetaData.referencedId = BuildersUtils.getColumnName(id);
     }
 
     private boolean isMappedReferencedTable(Class<?> foreignKeyClass) throws NoSuchFieldException {

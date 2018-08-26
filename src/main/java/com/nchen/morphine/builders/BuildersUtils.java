@@ -28,8 +28,9 @@ public class BuildersUtils {
         return SQLConstants.NOT_NULL + " " + SQLConstants.AUTO_INCREMENT + " " + SQLConstants.PRIMARY_KEY;
     }
 
-    public static String defaultColumnName(String str, String defaultStr) {
-        return StringUtils.isNotEmpty(str) ? str : defaultStr;
+    public static String getColumnName(Field field) {
+        Column column = field.getAnnotation(Column.class);
+        return StringUtils.isNotEmpty(column.name()) ? column.name() : field.getName();
     }
 
     public static Field findId(Class<?> entity) {
