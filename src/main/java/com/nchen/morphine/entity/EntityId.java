@@ -16,3 +16,22 @@ public abstract class EntityId {
         this.id = id;
     }
 }
+
+
+
+A a,b,c,d
+B e,g,f
+
+        INNER JOIN =>  A.a, B.e  => RS
+
+        List<ClassE> result = getList(SQL,[] args, ClassE.class)
+        Optional<ClassE> result = getOptionalOne(SQL,[] args, ClassE.class)
+
+
+ClassE
+  a
+  b
+
+List<ClassE>
+Optional<ClassE>
+
