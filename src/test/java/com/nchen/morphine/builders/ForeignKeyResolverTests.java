@@ -3,7 +3,7 @@ package com.nchen.morphine.builders;
 import com.nchen.morphine.annotations.Entity;
 import com.nchen.morphine.annotations.OneToOne;
 import com.nchen.morphine.entities.Machine;
-import com.nchen.morphine.entity.EntityId;
+import com.nchen.morphine.entity.BaseEntity;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -14,7 +14,7 @@ import java.lang.reflect.Field;
 public class ForeignKeyResolverTests {
 
     @Entity
-    class SecondEntity extends EntityId {
+    class SecondEntity extends BaseEntity {
         @OneToOne(mappedBy = "firstEntityNotMapped")
         private FirstEntity firstRelation;
 
@@ -22,7 +22,7 @@ public class ForeignKeyResolverTests {
         private FirstEntity secondRelation;
     }
 
-    class FirstEntity extends EntityId {
+    class FirstEntity extends BaseEntity {
         @OneToOne(joinColumn = "entity_id")
         SecondEntity entity;
     }

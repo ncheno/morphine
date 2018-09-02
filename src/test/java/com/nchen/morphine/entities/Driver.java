@@ -1,12 +1,12 @@
 package com.nchen.morphine.entities;
 
 import com.nchen.morphine.annotations.*;
-import com.nchen.morphine.entity.EntityId;
+import com.nchen.morphine.entity.BaseEntity;
 
 import java.util.List;
 
 @Entity
-public class Driver extends EntityId{
+public class Driver extends BaseEntity {
 
     @Column
     public String name;

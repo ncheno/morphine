@@ -4,10 +4,10 @@ import com.nchen.morphine.annotations.Column;
 
 import com.nchen.morphine.annotations.Entity;
 import com.nchen.morphine.annotations.OneToOne;
-import com.nchen.morphine.entity.EntityId;
+import com.nchen.morphine.entity.BaseEntity;
 
 @Entity
-public class Documents extends EntityId {
+public class Documents extends BaseEntity {
     @Column
     String date;
 
